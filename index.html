@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>포켓몬 도감 - MBTI 포켓몬 찾기</title>
+  <style>
+    :root {
+      --pokedex-red: #dc2626;
+      --pokedex-dark-red: #991b1b;
+      --pokedex-accent: #facc15;
+      --screen-bg: #fefce8;
+      --screen-border: #475569;
+      --text-color: #1e293b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Pretendard', 'Apple SD Gothic Neo', 'Malgun Gothic', sans-serif;
+    }
+
+    body {
+      background-color: #fef9c3;
+      background-image: radial-gradient(#fde047 1.5px, transparent 1.5px);
+      background-size: 24px 24px;
+      color: var(--text-color);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    /* 포켓몬 도감 프레임 */
+    .pokedex-container {
+      background: linear-gradient(145deg, #ef4444, #b91c1c);
+      border: 6px solid #7f1d1d;
+      border-radius: 28px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 8px 10px -6px rgba(0, 0, 0, 0.2), inset 0 4px 6px rgba(255, 255, 255, 0.3);
+      max-width: 580px;
+      width: 100%;
+      padding: 24px;
+      position: relative;
+    }
+
+    /* 도감 상단 센서/라이트 부 */
+    .pokedex-header {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+      padding-bottom: 12px;
+      border-bottom: 4px solid #991b1b;
+    }
+
+    .main-sensor {
+      width: 50px;
+      height: 50px;
+      background: radial-gradient(circle at 35% 35%, #60a5fa, #1d4ed8);
+      border: 5px solid #ffffff;
+      border-radius: 50%;
+      box-shadow: 0 0 12px #3b82f6, 0 4px 6px rgba(0,0,0,0.3);
+      animation: pulse 2s infinite alternate;
+    }
+
+    .sub-lights {
+      display: flex;
+      gap: 8px;
+    }
+
+    .light {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #7f1d1d;
+    }
+    .light.red { background: #ef4444; box-shadow: 0 0 5px #ef4444; }
+    .light.yellow { background: #facc15; box-shadow: 0 0 5px #facc15; }
+    .light.green { background: #22c55e; box-shadow: 0 0 5px #22c55e; }
+
+    /* 메인 스크린 */
+    .pokedex-screen {
+      background-color: var(--screen-bg);
+      border: 6px solid var(--screen-border);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: inset 0 4px 8px rgba(0, 0, 0, 0.15);
+      position: relative;
+    }
+
+    .screen-title {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+
+    .screen-title h1 {
+      font-size: 1.8rem;
+      color: #991b1b;
+      font-weight: 800;
+      text-shadow: 1px 1px 0px #fde047;
+      margin-bottom: 6px;
+    }
+
+    .screen-title p {
+      font-size: 1rem;
+      color: #4b5563;
+      font-weight: 600;
+    }
+
+    /* MBTI 선택 그리드 */
+    .mbti-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+    }
+
+    /* 포켓볼 스타일 버튼 */
+    .mbti-btn {
+      background: linear-gradient(180deg, #ef4444 48%, #334155 48%, #334155 52%, #ffffff 52%);
+      border: 3px solid #1e293b;
+      border-radius: 12px;
+      padding: 12px 6px;
+      font-size: 1.1rem;
+      font-weight: 800;
+      color: #ffffff;
+      text-shadow: 1px 1px 2px #000;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      position: relative;
+      box-shadow: 0 4px 0 #1e293b;
+    }
+
+    .mbti-btn::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 12px;
+      height: 12px;
+      background: #ffffff;
+      border: 3px solid #1e293b;
+      border-radius: 50%;
+    }
+
+    .mbti-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #1e293b;
+      filter: brightness(1.1);
+    }
+
+    .mbti-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #1e293b;
+    }
+
+    /* 결과 페이지 스타일 */
+    .result-container {
+      display: none;
+      text-align: center;
+      animation: fadeIn 0.4s ease-out;
+    }
+
+    .pokemon-card {
+      background-color: #ffffff;
+      border: 3px solid #cbd5e1;
+      border-radius: 16px;
+      padding: 20px;
+      margin-bottom: 16px;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    }
+
+    .pokemon-image-box {
+      width: 180px;
+      height: 180px;
+      margin: 0 auto 12px;
+      background: radial-gradient(circle, #fef08a 0%, #fef9c3 100%);
+      border: 4px dashed #facc15;
+      border-radius: 50%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      position: relative;
+    }
+
+    .pokemon-svg {
+      width: 130px;
+      height: 130px;
+      filter: drop-shadow(0 8px 6px rgba(0,0,0,0.15));
+    }
+
+    .mbti-badge {
+      display: inline-block;
+      background-color: #dc2626;
+      color: white;
+      font-weight: 800;
+      padding: 4px 14px;
+      border-radius: 20px;
+      font-size: 0.95rem;
+      margin-bottom: 8px;
+    }
+
+    .pokemon-name {
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: #0f172a;
+      margin-bottom: 12px;
+    }
+
+    .pokemon-desc {
+      font-size: 1.05rem;
+      line-height: 1.6;
+      color: #334155;
+      text-align: left;
+      background-color: #f8fafc;
+      padding: 14px;
+      border-radius: 10px;
+      border-left: 4px solid #ef4444;
+      word-break: keep-all;
+    }
+
+    /* 궁합 카드 */
+    .compatibility-box {
+      background-color: #fef2f2;
+      border: 2px dashed #f87171;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+
+    .compatibility-title {
+      font-weight: 700;
+      color: #991b1b;
+      font-size: 0.95rem;
+    }
+
+    .compatibility-mbti {
+      background-color: #ef4444;
+      color: white;
+      padding: 2px 10px;
+      border-radius: 12px;
+      font-weight: 800;
+      font-size: 0.9rem;
+    }
+
+    /* 다시 고르기 버튼 */
+    .reset-btn {
+      width: 100%;
+      background: linear-gradient(180deg, #eab308, #ca8a04);
+      color: white;
+      border: 3px solid #713f12;
+      border-radius: 12px;
+      padding: 14px;
+      font-size: 1.2rem;
+      font-weight: 800;
+      cursor: pointer;
+      box-shadow: 0 4px 0 #713f12;
+      transition: all 0.15s ease;
+      text-shadow: 1px 1px 0px #000;
+    }
+
+    .reset-btn:hover {
+      filter: brightness(1.1);
+      transform: translateY(-2px);
+      box-shadow: 0 6px 0 #713f12;
+    }
+
+    .reset-btn:active {
+      transform: translateY(2px);
+      box-shadow: 0 2px 0 #713f12;
+    }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 8px #3b82f6; }
+      100% { box-shadow: 0 0 18px #60a5fa, 0 0 25px #3b82f6; }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: scale(0.95); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    @media (max-width: 480px) {
+      .mbti-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+      .pokedex-container {
+        padding: 16px;
+      }
+      .pokedex-screen {
+        padding: 16px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="pokedex-container">
+    <!-- 도감 상단 센서 조명 -->
+    <div class="pokedex-header">
+      <div class="main-sensor"></div>
+      <div class="sub-lights">
+        <div class="light red"></div>
+        <div class="light yellow"></div>
+        <div class="light green"></div>
+      </div>
+    </div>
+
+    <!-- 도감 화면 -->
+    <div class="pokedex-screen">
+      <!-- 1. MBTI 선택 화면 -->
+      <div id="selection-screen">
+        <div class="screen-title">
+          <h1>⚡ MBTI 포켓몬 도감</h1>
+          <p>당신의 MBTI를 선택하여 어울리는 포켓몬을 탐색하세요!</p>
+        </div>
+        <div class="mbti-grid" id="mbti-grid"></div>
+      </div>
+
+      <!-- 2. 포켓몬 분석 결과 화면 -->
+      <div id="result-screen" class="result-container">
+        <div class="mbti-badge" id="res-mbti">ENFP</div>
+        <div class="pokemon-card">
+          <div class="pokemon-image-box" id="res-img-container">
+            <!-- SVG 포켓몬 이미지 삽입 위치 -->
+          </div>
+          <div class="pokemon-name" id="res-name">피카츄</div>
+          <div class="pokemon-desc" id="res-desc">
+            설명이 여기에 들어갑니다.
+          </div>
+        </div>
+
+        <div class="compatibility-box">
+          <span class="compatibility-title">❤️ 환상의 파트너 궁합:</span>
+          <span class="compatibility-mbti" id="res-compat">INTJ</span>
+        </div>
+
+        <button class="reset-btn" onclick="resetSelection()">🔄 다시 측정하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 각 포켓몬의 고화질 Vector SVG 코드
+    const pokemonSvgs = {
+      pikachu: `<svg class="pokemon-svg" viewBox="0 0 100 100">
+        <path d="M25,35 L10,10 L30,22 Z" fill="#eab308" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M10,10 L18,18 L13,23 Z" fill="#1e293b"/>
+        <path d="M75,35 L90,10 L70,22 Z" fill="#eab308" stroke="#1e293b" stroke-width="2.5" stroke-linejoin="round"/>
+        <path d="M90,10 L82,18 L87,23 Z" fill="#1e293b"/>
+        <ellipse cx="50" cy="55" rx="30" ry="26" fill="#facc15" stroke="#1e293b" stroke-width="3"/>
+        <circle cx="38" cy="48" r="4.5" fill="#1e293b"/>
+        <circle cx="62" cy="48" r="4.5" fill="#1e293b"/>
+        <circle cx="40" cy="46" r="1.5" fill="#ffffff"/>
+        <circle cx="64" cy="46" r="1.5" fill="#ffffff"/>
+        <circle cx="30" cy="58" r="5.5" fill="#ef4444"/>
+        <circle cx="70" cy="58" r="5.5" fill="#ef4444"/>
+        <polygon points="50,53 47,56 53,56" fill="#1e293b"/>
+        <path d="M44,62 Q50,68 56,62" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+      </svg>`,
+      charmander: `<svg class="pokemon-svg" viewBox="0 0 100 100">
+        <path d="M75,65 Q88,55 82,75 Q75,70 75,65" fill="#ef4444" stroke="#1e293b" stroke-width="2"/>
+        <path d="M80,68 Q88,60 83,73" fill="#facc15"/>
+        <ellipse cx="50" cy="52" rx="26" ry="28" fill="#f97316" stroke="#1e293b" stroke-width="3"/>
+        <path d="M36,46 Q50,60 64,46" fill="#fef08a"/>
+        <ellipse cx="40" cy="44" rx="4" ry="6" fill="#1e293b"/>
+        <ellipse cx="60" cy="44" rx="4" ry="6" fill="#1e293b"/>
+        <circle cx="41" cy="42" r="1.5" fill="#ffffff"/>
+        <circle cx="61" cy="42" r="1.5" fill="#ffffff"/>
+        <path d="M42,58 Q50,65 58,58" fill="#991b1b" stroke="#1e293b" stroke-width="2"/>
+      </svg>`,
+      squirtle: `<svg class="pokemon-svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="55" r="28" fill="#78350f" stroke="#1e293b" stroke-width="3"/>
+        <circle cx="50" cy="50" r="25" fill="#38bdf8" stroke="#1e293b" stroke-width="3"/>
+        <path d="M32,48 Q50,68 68,48" fill="#fef08a" stroke="#1e293b" stroke-width="2"/>
+        <ellipse cx="40" cy="42" rx="4.5" ry="6" fill="#7f1d1d"/>
+        <ellipse cx="60" cy="42" rx="4.5" ry="6" fill="#7f1d1d"/>
+        <circle cx="41" cy="40" r="1.5" fill="#ffffff"/>
+        <circle cx="61" cy="40" r="1.5" fill="#ffffff"/>
+        <path d="M44,56 Q50,60 56,56" fill="none" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+      </svg>`,
+      bulbasaur: `<svg class="pokemon-svg" viewBox="0 0 100 100">
+        <path d="M50,20 Q30,35 38,50 Q50,52 62,50 Q70,35 50,20 Z" fill="#15803d" stroke="#1e293b" stroke-width="2.5"/>
+        <ellipse cx="50" cy="58" rx="27" ry="22" fill="#2dd4bf" stroke="#1e293b" stroke-width="3"/>
+        <path d="M32,38 L25,28 L38,34 Z" fill="#2dd4bf" stroke="#1e293b" stroke-width="2"/>
+        <path d="M68,38 L75,28 L62,34 Z" fill="#2dd4bf" stroke="#1e293b" stroke-width="2"/>
+        <ellipse cx="38" cy="54" rx="4.5" ry="6" fill="#b91c1c"/>
+        <ellipse cx="62" cy="54" rx="4.5" ry="6" fill="#b91c1c"/>
+        <circle cx="39" cy="52" r="1.5" fill="#ffffff"/>
+        <circle cx="63" cy="52" r="1.5" fill="#ffffff"/>
+        <path d="M44,66 Q50,70 56,66" fill="none" stroke="#1e293b" stroke-width="2" stroke-linecap="round"/>
+      </svg>`,
+      eevee: `<svg class="pokemon-svg" viewBox="0 0 100 100">
+        <path d="M30,38 L12,18 L26,28 Z" fill="#78350f" stroke="#1e293b" stroke-width="2"/>
+        <path d="M70,38 L88,18 L74,28 Z" fill="#78350f" stroke="#1e293b" stroke-width="2"/>
+        <ellipse cx="50" cy="52" rx="25" ry="22" fill="#b45309" stroke="#1e293b" stroke-width="3"/>
+        <path d="M30,68 Q50,80 70,68 Q50,60 30,68 Z" fill="#fef08a" stroke="#1e293b" stroke-width="2"/>
+        <ellipse cx="39" cy="48" rx="4.5" ry="6.5" fill="#451a03"/>
+        <ellipse cx="61" cy="48" rx="4.5" ry="6.5" fill="#451a03"/>
+        <circle cx="40" cy="46" r="1.5" fill="#ffffff"/>
+        <circle cx="62" cy="46" r="1.5" fill="#ffffff"/>
+        <polygon points="50,54 48,57 52,57" fill="#1e293b"/>
+        <path d="M45,60 Q50,63 55,60" fill="none" stroke="#1e293b" stroke-width="2"/>
+      </svg>`,
+      snorlax: `<svg class="pokemon-svg" viewBox="0 0 100 100">
+        <path d="M30,32 L22,18 L36,26 Z" fill="#0f766e" stroke="#1e293b" stroke-width="2"/>
+        <path d="M70,32 L78,18 L64,26 Z" fill="#0f766e" stroke="#1e293b" stroke-width="2"/>
+        <ellipse cx="50" cy="55" rx="32" ry="28" fill="#0f766e" stroke="#1e293b" stroke-width="3"/>
+        <ellipse cx="50" cy="57" rx="24" ry="20" fill="#fef08a"/>
+        <path d="M34,48 Q40,46 44,48" fill="none" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M56,48 Q60,46 66,48" fill="none" stroke="#1e293b" stroke-width="2.5" stroke-linecap="round"/>
+        <path d="M44,60 Q50,65 56,60" fill="none" stroke="#1e293b" stroke-width="2"/>
+      </svg>`,
+      mew: `<svg class="pokemon-svg" viewBox="0 0 100 100">
+        <path d="M68,60 Q88,50 80,80" fill="none" stroke="#f472b6" stroke-width="4" stroke-linecap="round"/>
+        <ellipse cx="50" cy="50" rx="24" ry="22" fill="#fbcfe8" stroke="#1e293b" stroke-width="3"/>
+        <path d="M32,36 L26,26 L36,30 Z" fill="#fbcfe8" stroke="#1e293b" stroke-width="2"/>
+        <path d="M68,36 L74,26 L64,30 Z" fill="#fbcfe8" stroke="#1e293b" stroke-width="2"/>
+        <ellipse cx="40" cy="48" rx="5" ry="7" fill="#0284c7"/>
+        <ellipse cx="60" cy="48" rx="5" ry="7" fill="#0284c7"/>
+        <circle cx="41" cy="46" r="2" fill="#ffffff"/>
+        <circle cx="61" cy="46" r="2" fill="#ffffff"/>
+        <path d="M46,58 Q50,61 54,58" fill="none" stroke="#1e293b" stroke-width="2"/>
+      </svg>`,
+      generic: `<svg class="pokemon-svg" viewBox="0 0 100 100">
+        <circle cx="50" cy="50" r="32" fill="#ef4444" stroke="#1e293b" stroke-width="3"/>
+        <path d="M18,50 A32,32 0 0,0 82,50 Z" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>
+        <line x1="18" y1="50" x2="82" y2="50" stroke="#1e293b" stroke-width="4"/>
+        <circle cx="50" cy="50" r="9" fill="#ffffff" stroke="#1e293b" stroke-width="3"/>
+        <circle cx="50" cy="50" r="4" fill="#cbd5e1"/>
+      </svg>`
+    };
+
+    // 16가지 MBTI 포켓몬 매칭 데이터
+    const mbtiPokemonData = {
+      ENFP: {
+        name: "피카츄 ⚡",
+        svg: pokemonSvgs.pikachu,
+        compat: "INTJ",
+        desc: "밝고 에너지가 넘치며 순발력이 뛰어난 당신! 누구와도 쉽게 친해지는 인싸 성향이 피카츄의 톡톡 튀는 에너지를 똑 닮았습니다."
+      },
+      ENTP: {
+        name: "팬텀 👻",
+        svg: pokemonSvgs.generic,
+        compat: "INFJ",
+        desc: "장난기 많고 아이디어가 번뜩이는 재치꾼! 신선한 충격과 재미를 탐구하는 모습이 위트 넘치는 팬텀과 완벽히 일치합니다."
+      },
+      ENFJ: {
+        name: "망나뇽 🐉",
+        svg: pokemonSvgs.generic,
+        compat: "INFP",
+        desc: "따뜻한 마음씨로 주위 사람들을 살뜰히 챙기고 이끄는 리더! 상냥함과 든든한 힘을 모두 갖춘 망나뇽 유형입니다."
+      },
+      ENTJ: {
+        name: "리자몽 🔥",
+        svg: pokemonSvgs.charmander,
+        compat: "INTP",
+        desc: "열정적이고 목표를 향해 당당하게 나아가는 대담한 지도자! 리자몽의 뜨거운 불꽃처럼 추진력이 넘쳐납니다."
+      },
+      ESFP: {
+        name: "푸린 🎤",
+        svg: pokemonSvgs.generic,
+        compat: "ISTJ",
+        desc: "어디서나 분위기 메이커이자 주목받는 것을 즐기는 연예인 성향! 노래로 모두의 시선을 사로잡는 푸린과 어울립니다."
+      },
+      ESTP: {
+        name: "꼬부기 🐢",
+        svg: pokemonSvgs.squirtle,
+        compat: "ISFJ",
+        desc: "적응력이 뛰어나고 상황 대처가 능숙한 행동파! 장난기 많고 에너지 넘치는 꼬부기부대의 대장 같은 면모가 있습니다."
+      },
+      ESFJ: {
+        name: "해피너스 💖",
+        svg: pokemonSvgs.generic,
+        compat: "ISFP",
+        desc: "친절하고 다정하며 주변 사람들의 행복을 최우선으로 생각하는 힐러! 모두를 아껴주는 해피너스 마음을 가지고 있습니다."
+      },
+      ESTJ: {
+        name: "윈디 🐕",
+        svg: pokemonSvgs.generic,
+        compat: "INFP",
+        desc: "책임감이 강하고 규칙과 신의를 중요하게 여기는 든든한 리더! 용맹하고 의리 있는 윈디의 모습을 자랑합니다."
+      },
+      INFP: {
+        name: "이상해씨 🍃",
+        svg: pokemonSvgs.bulbasaur,
+        compat: "ENFJ",
+        desc: "조용하지만 내면의 따뜻함과 감성이 풍부한 상상가! 차분하게 자연을 느끼는 이상해씨처럼 평화로운 매력이 있습니다."
+      },
+      INTP: {
+        name: "후딘 🧠",
+        svg: pokemonSvgs.generic,
+        compat: "ENFJ",
+        desc: "호기심이 많고 논리적 탐구를 즐기는 아이디어 파이프라인! IQ 5000에 달하는 깊은 지적 탐구심의 후딘과 비슷합니다."
+      },
+      INFJ: {
+        name: "뮤 ✨",
+        svg: pokemonSvgs.mew,
+        compat: "ENTP",
+        desc: "신비롭고 깊은 통찰력을 가졌으며 타인을 깊이 이해하는 성자! 신비롭고 온화한 분위기의 신화 속 포켓몬 뮤에 비유됩니다."
+      },
+      INTJ: {
+        name: "뮤츠 🔮",
+        svg: pokemonSvgs.generic,
+        compat: "ENFP",
+        desc: "독립적이고 완벽한 전략을 세우는 철저한 분석가! 치밀하고 압도적인 능력을 지닌 뮤츠와 높은 싱크로율을 보입니다."
+      },
+      ISFP: {
+        name: "이브이 🦊",
+        svg: pokemonSvgs.eevee,
+        compat: "ESFJ",
+        desc: "온순하고 예술적 감각이 뛰어나며 무궁무진한 가능성을 지닌 유형! 다양한 모습으로 진화할 수 있는 이브이 그 자체입니다."
+      },
+      ISTP: {
+        name: "파이리 🔥",
+        svg: pokemonSvgs.charmander,
+        compat: "ESFP",
+        desc: "조용하지만 실전에 강하고 도구를 다루는 데 유연한 마이웨이! 상황에 따라 유연하게 불꽃을 피우는 파이리와 닮았습니다."
+      },
+      ISFJ: {
+        name: "잠만보 💤",
+        svg: pokemonSvgs.snorlax,
+        compat: "ESTP",
+        desc: "수호자처럼 묵묵히 자리를 지키며 차분하고 포근한 쉼터를 주는 성향! 따뜻하고 안락함을 전달하는 잠만보 스타일입니다."
+      },
+      ISTJ: {
+        name: "암나이트 🐚",
+        svg: pokemonSvgs.generic,
+        compat: "ESFP",
+        desc: "원칙을 준수하고 원리원칙에 충실하며 신뢰를 최우선하는 원조 길잡이! 변함없이 견고한 가치를 지켜냅니다."
+      }
+    };
+
+    // MBTI 선택 버튼 생성
+    const mbtiList = ["ENFP", "ENTP", "ENFJ", "ENTJ", "ESFP", "ESTP", "ESFJ", "ESTJ", "INFP", "INTP", "INFJ", "INTJ", "ISFP", "ISTP", "ISFJ", "ISTJ"];
+    const gridContainer = document.getElementById("mbti-grid");
+
+    mbtiList.forEach(mbti => {
+      const btn = document.createElement("button");
+      btn.className = "mbti-btn";
+      btn.innerText = mbti;
+      btn.onclick = () => showResult(mbti);
+      gridContainer.appendChild(btn);
+    });
+
+    // 결과 출력 함수
+    function showResult(mbti) {
+      const data = mbtiPokemonData[mbti];
+      
+      document.getElementById("res-mbti").innerText = `[${mbti}]`;
+      document.getElementById("res-name").innerText = data.name;
+      document.getElementById("res-img-container").innerHTML = data.svg;
+      document.getElementById("res-desc").innerText = data.desc;
+      document.getElementById("res-compat").innerText = data.compat;
+
+      document.getElementById("selection-screen").style.display = "none";
+      document.getElementById("result-screen").style.display = "block";
+    }
+
+    // 다시 선택 함수
+    function resetSelection() {
+      document.getElementById("result-screen").style.display = "none";
+      document.getElementById("selection-screen").style.display = "block";
+    }
+  </script>
+</body>
+</html>
